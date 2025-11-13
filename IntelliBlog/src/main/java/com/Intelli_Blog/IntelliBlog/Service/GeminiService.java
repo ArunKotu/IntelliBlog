@@ -38,7 +38,7 @@ public class GeminiService {
     public String generateContent(String prompt) {
 
         String url = "https://generativelanguage.googleapis.com/v1beta/models/"
-                + "gemini-2.5-flash-lite:generateContent?key=" + apiKey;
+                + "gemini-1.5-flash-lite:generateContent?key=" + apiKey;
 
         Map<String, Object> requestBody = Map.of(
                 "contents", List.of(
