@@ -3,7 +3,8 @@ spring:
     name: IntelliBlog
   data:
     mongodb:
-      url: "${MONGO_URL}"
+      uri: "${MONGO_URI}"
+      database: intelliBlog
     auto-index:
       creation: true
 gemini:

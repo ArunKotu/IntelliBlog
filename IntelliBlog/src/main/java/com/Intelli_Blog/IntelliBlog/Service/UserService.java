@@ -3,7 +3,6 @@ package com.Intelli_Blog.IntelliBlog.Service;
 import com.Intelli_Blog.IntelliBlog.DTO.RegisterDto;
 import com.Intelli_Blog.IntelliBlog.Model.User;
 import com.Intelli_Blog.IntelliBlog.Repository.UserRepository;
-import org.springframework.data.annotation.Id;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -21,17 +20,28 @@ public class UserService {
         this.encoder = encoder;
     }
     public User saveUser(RegisterDto dto){
+
+        if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
+            throw new RuntimeException("Email already exists");
+        }
+
+        if (userRepository.findByUsername(dto.getUsername()).isPresent()) {
+            throw new RuntimeException("Username already exists");
+        }
+
         User user = new User();
         user.setEmail(dto.getEmail());
         user.setUsername(dto.getUsername());
         user.setPassword(encoder.encode(dto.getPassword()));
+
         return userRepository.save(user);
     }
+
     public RegisterDto getUser(String email) {
-        User user = userRepository.findByEmail(email);
+        Optional<User> user = userRepository.findByEmail(email);
         RegisterDto dto = new RegisterDto();
-        dto.setUsername(user.getUsername());
-        dto.setEmail(user.getEmail());
+        dto.setUsername(user.get().getUsername());
+        dto.setEmail(user.get().getEmail());
         return dto;
     }
 

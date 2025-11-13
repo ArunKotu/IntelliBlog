@@ -26,9 +26,11 @@ public class UserController {
             userService.saveUser(dto);
             return "User registered successfully";
         } catch (Exception e) {
-            return "User already exists or registration failed";
+            e.printStackTrace();  // <-- THIS MUST PRINT IN CONSOLE
+            return "ERROR: " + e.getMessage();
         }
     }
+
     @PutMapping("/update/{id}")
     public String updateUser(@PathVariable String id, @RequestBody User user){
         return userService.updateUser(id,user);
