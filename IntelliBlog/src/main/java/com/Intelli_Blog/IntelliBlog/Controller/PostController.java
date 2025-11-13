@@ -30,10 +30,15 @@ public class PostController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
     }
-    @PostMapping("/summarize/{id}")
-    public String summarize(@PathVariable String id){
-        return postService.summarize(id);
+   @GetMapping("/summarize/{postId}")
+public ResponseEntity<String> summarizeFromDb(@PathVariable String postId) {
+    try {
+        return ResponseEntity.ok(postService.summarize(postId));
+    } catch (Exception e) {
+        return ResponseEntity.status(500).body("AI summary failed.");
     }
+}
+
     @DeleteMapping("/delete/{id}")
     public String deletePost(@PathVariable String id){
         return postService.deletePost(id);
