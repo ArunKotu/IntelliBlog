@@ -9,12 +9,21 @@
         /* Custom font and basic setup */
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         .page-container { min-height: calc(100vh - 80px); }
-        /* Style for the post content to preserve formatting */
-        /* IMPORTANT: post-content (textarea) still needs pre-wrap, but #full-post-content should just break lines */
+        
+        /* Ensure content respects formatting */
         #post-content { white-space: pre-wrap; word-break: break-word; }
-        /* Use pre-wrap to respect line breaks from the database content */
-        #full-post-content { white-space: pre-wrap; word-break: break-word; line-height: 1.7; } 
-        .post-card-content { white-space: pre-wrap; word-break: break-word; }
+        .full-post-content { white-space: pre-wrap; word-break: break-word; line-height: 1.7; transition: height 0.3s ease-out; } 
+        
+        /* Style for the collapsed snippet */
+        .post-card-snippet { 
+            white-space: pre-wrap; 
+            word-break: break-word; 
+            overflow: hidden; 
+            display: -webkit-box;
+            -webkit-line-clamp: 4; /* Show a maximum of 4 lines for the snippet */
+            -webkit-box-orient: vertical;
+        }
+
         .loading-animation {
             border: 4px solid #f3f3f3;
             border-top: 4px solid #3498db;
@@ -69,19 +78,6 @@
             </div>
         </section>
         
-        <section id="view-post-section" class="view-section hidden py-8">
-            <article class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-lg border border-gray-200">
-                <h2 id="full-post-title" class="text-4xl font-extrabold text-gray-900 mb-2"></h2>
-                <p id="full-post-meta" class="text-md text-indigo-600 mb-6 border-b pb-4"></p>
-                <div id="full-post-content" class="text-gray-800 text-lg leading-relaxed">
-                    </div>
-                <div class="mt-8 pt-6 border-t border-gray-200 text-center">
-                    <button onclick="navigateTo('home-section')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition duration-150 ease-in-out">
-                        &larr; Back to All Posts
-                    </button>
-                </div>
-            </article>
-        </section>
         <section id="auth-section" class="view-section hidden flex justify-center py-16">
             <div class="w-full max-w-lg space-y-8">
                 <div id="register-container" class="bg-white p-8 rounded-xl shadow-lg border border-gray-200">
@@ -140,6 +136,7 @@
     // --- JavaScript Implementation ---
     const BASE_URL = 'https://intelliblog-6.onrender.com';
     let userCredentials = null; // Stores { email, password } for Basic Auth
+    const fullPostCache = {}; // Cache for full post content
 
     // --- Core UI Helpers ---
 
@@ -173,7 +170,6 @@
         } else if (sectionId === 'my-posts-section' && userCredentials) {
             loadMyPosts();
         }
-        // No action needed for auth-section, post-crud-section, or view-post-section (which is loaded by viewPost)
     };
 
     const showLogin = () => {
@@ -202,18 +198,14 @@
         };
     };
 
-    // --- FIX: Refactored to read the response stream only once. ---
     const handleProtectedResponse = async (response) => {
-        // 1. Read the body stream ONCE as text.
         let responseText = '';
         try {
             responseText = await response.text();
         } catch (e) {
             console.error("Error reading response body stream:", e);
-            // responseText remains empty string on error
         }
 
-        // 2. Handle unauthorized/error status codes (4xx/5xx)
         if (!response.ok) {
             if (response.status === 401 || response.status === 403) {
                 showModal("Session expired or access denied. Please log in again.", true);
@@ -222,26 +214,19 @@
                 navigateTo('auth-section');
                 throw new Error("Unauthorized");
             }
-            // Throw the error using the extracted text (which might contain the server-side error message)
             throw new Error(responseText || `HTTP error! status: ${response.status}`);
         }
 
-        // 3. Handle success (2xx)
-        // Try to parse the text as JSON if it looks like JSON (starts with { or [).
         const trimmedText = responseText.trim();
         if (trimmedText.startsWith('{') || trimmedText.startsWith('[')) {
             try {
                 return JSON.parse(trimmedText);
             } catch (e) {
-                // If JSON parsing fails, return the raw text instead.
                 return responseText;
             }
         }
-
-        // If it's not JSON (e.g., a plain text "Success" message), return the raw text.
         return responseText;
     };
-    // -----------------------------------------------------------------
 
 
     // --- AUTH HANDLERS ---
@@ -269,7 +254,6 @@
                 body: JSON.stringify(dto)
             });
 
-            // Use the new protected response handler for common status checks
             const result = await handleProtectedResponse(response);
 
             messageEl.style.color = 'green';
@@ -277,7 +261,6 @@
             showLogin();
         } catch (error) {
             messageEl.style.color = 'red';
-            // Display the specific error message from the responseText
             messageEl.textContent = error.message.includes('Unauthorized') ? 'Registration failed.' : error.message;
         }
     };
@@ -299,7 +282,6 @@
         const encoded = btoa(`${email}:${password}`);
 
         try {
-            // Use the /auth/login endpoint for the Basic Auth check
             const response = await fetch(`${BASE_URL}/auth/login`, {
                 method: 'GET',
                 headers: { 'Authorization': `Basic ${encoded}` }
@@ -322,7 +304,6 @@
     };
 
     const handleLogout = () => {
-        // Clear credentials and update UI
         userCredentials = null;
         updateNavButtons(false);
         navigateTo('home-section');
@@ -330,66 +311,75 @@
     };
 
 
-    // --- POST DISPLAY & CRUD HANDLERS ---
+    // --- NEW CORE LOGIC: In-Card Content Toggling ---
 
     /**
-     * FIX: Fetches and displays the full content of a single post, with robust data checking.
+     * Toggles the display of the full content within the post card.
      */
-    const viewPost = async (postId) => {
-        navigateTo('view-post-section');
-        const titleEl = document.getElementById('full-post-title');
-        const metaEl = document.getElementById('full-post-meta');
-        const contentEl = document.getElementById('full-post-content');
+    const togglePostContent = async (postId, cardEl, post) => {
+        const fullContentEl = cardEl.querySelector('.full-post-content');
+        const snippetEl = cardEl.querySelector('.post-card-snippet');
+        const toggleButton = cardEl.querySelector('.toggle-content-btn');
+        
+        // --- 1. Collapse the view ---
+        if (cardEl.classList.contains('expanded')) {
+            fullContentEl.classList.add('hidden');
+            snippetEl.classList.remove('hidden');
+            cardEl.classList.remove('expanded');
+            toggleButton.textContent = 'Read Full Blog \u2192'; // Right arrow
+            return;
+        }
 
-        titleEl.textContent = 'Loading...';
-        metaEl.textContent = '';
-        contentEl.innerHTML = '<div class="text-center py-12 text-gray-500"><div class="loading-animation"></div> Loading full post...</div>';
+        // --- 2. Expand the view (Initial fetch or use cache) ---
+        cardEl.classList.add('expanded');
+        snippetEl.classList.add('hidden');
+        fullContentEl.classList.remove('hidden');
+        fullContentEl.innerHTML = '<div class="text-center py-4 text-indigo-500"><div class="loading-animation"></div> Loading full post...</div>';
+        toggleButton.textContent = '\u2190 Hide Full Blog'; // Left arrow
 
+        // Check cache first
+        if (fullPostCache[postId]) {
+            fullContentEl.textContent = fullPostCache[postId];
+            return;
+        }
+
+        // Fetch post if not in cache (This is where the 500 error happens)
         try {
-            // Fetch the post using the public endpoint.
+            // Note: Public endpoint /post/getPost/{id} is used here
             const response = await fetch(`${BASE_URL}/post/getPost/${postId}`);
             
-            // Check status manually since we're not using auth headers here
             if (!response.ok) {
                  const errorText = await response.text();
                  throw new Error(errorText || `Failed to load post: HTTP status ${response.status}`);
             }
 
-            const post = await response.json(); // Safely parse the JSON
+            const fullPost = await response.json(); 
+            const content = fullPost.content || 'Content data missing.';
 
-            // --- FIX IMPLEMENTATION START ---
-            // Fix 1: Handle missing author email
-            const author = post.authorEmail || 'Anonymous User';
-            
-            // Fix 2: Handle invalid or missing dates
-            const dateSource = post.updatedAt || post.createdAt;
-            let dateFormatted = 'Unknown Date';
-            if (dateSource) {
-                 const dateObj = new Date(dateSource);
-                 // Check if dateObj is actually a valid date object
-                 if (!isNaN(dateObj.getTime())) { 
-                    dateFormatted = dateObj.toLocaleDateString();
-                 }
-            }
-
-            // Fix 3: Handle missing title and content gracefully
-            titleEl.textContent = post.title || 'Untitled Blog Post';
-            metaEl.textContent = `By: ${author} | Last updated: ${dateFormatted}`;
-            
-            contentEl.textContent = post.content || 'Error: Content data is missing.';
-            // --- FIX IMPLEMENTATION END ---
+            fullPostCache[postId] = content; // Cache the full content
+            fullContentEl.textContent = content;
 
         } catch (error) {
-            contentEl.innerHTML = `<div class="text-center py-12 text-red-500">Error loading the full post. ${error.message}</div>`;
-            titleEl.textContent = 'Error';
-            metaEl.textContent = 'Post not found or network issue.';
+            // Display the error directly in the card content area
+            fullContentEl.innerHTML = `<div class="py-2 text-red-500 font-medium">Error loading content: Post not found or network issue. 
+                <br><span class="text-xs text-gray-500">Server Error: ${error.message.substring(0, 100)}...</span></div>`;
         }
-    }
+    };
 
+
+    // --- POST DISPLAY & CRUD HANDLERS ---
 
     const createPostCard = (post, isAuthorView = false) => {
         const card = document.createElement('div');
-        card.className = 'post-card bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition duration-300 border border-gray-100 p-6 flex flex-col justify-between';
+        card.className = 'post-card bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition duration-300 border border-gray-100 p-6 flex flex-col justify-between cursor-pointer';
+        
+        // Make the card body clickable to toggle content
+        card.onclick = (e) => {
+            // Prevent event from bubbling if a child button (like summarize/edit/delete) was clicked
+            if (e.target.closest('button')) return; 
+            togglePostContent(post.id, card, post);
+        };
+
 
         let buttonsHtml = '';
         if (isAuthorView) {
@@ -403,28 +393,34 @@
 
         const date = new Date(post.createdAt || post.updatedAt).toLocaleDateString();
 
-        // Create a content snippet (first 200 characters) - KEEP THIS FOR PREVIEW
-        const contentSnippet = post.content.substring(0, 200);
-        const contentDisplay = contentSnippet + (post.content.length > 200 ? '...' : '');
+        // Create a content snippet (first ~200 characters)
+        const contentSnippet = post.content ? post.content.substring(0, 200) : 'Content loading...';
+        const contentDisplay = contentSnippet + (post.content && post.content.length > 200 ? '...' : '');
 
         card.innerHTML = `
             <div>
                 <h3 class="text-2xl font-bold text-gray-800 mb-2">${post.title}</h3>
-                <p class="text-sm text-indigo-500 mb-4">By: ${post.authorEmail}</p>
+                <p class="text-sm text-indigo-500 mb-4">By: ${post.authorEmail || 'Anonymous User'}</p>
 
                 <p class="post-card-snippet text-gray-700 text-base mb-4 italic">
                     ${contentDisplay}
                 </p>
+                
+                <div class="full-post-content text-gray-800 text-base mb-4 hidden">
+                    </div>
+
 
                 <div id="summary-${post.id}" class="summary-box p-3 bg-indigo-50 text-indigo-800 border-l-4 border-indigo-400 rounded-r-lg mb-4 hidden">
                     <p class="font-bold">AI Summary:</p>
                     <div class="summary-content text-sm mt-1">Click Summarize to generate.</div>
                 </div>
 
-                <div class="flex flex-wrap gap-2 mt-2">
-                    <button onclick="viewPost('${post.id}')" class="bg-green-500 hover:bg-green-600 text-white font-medium py-1 px-3 rounded-lg text-xs transition duration-150 ease-in-out">
-                        View Full Blog
+                <div class="flex flex-wrap gap-2 mt-2 justify-between items-center">
+                    <button onclick="togglePostContent('${post.id}', this.closest('.post-card'), post)" 
+                        class="toggle-content-btn bg-green-500 hover:bg-green-600 text-white font-medium py-1 px-3 rounded-lg text-xs transition duration-150 ease-in-out">
+                        Read Full Blog &rarr;
                     </button>
+                    
                     <button id="summarize-btn-${post.id}" onclick="summarizePost('${post.id}')" class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-1 px-3 rounded-lg text-xs transition duration-150 ease-in-out">
                         Summarize Blog (AI)
                     </button>
@@ -439,9 +435,12 @@
         return card;
     };
 
+
     const loadAllPosts = async () => {
         const container = document.getElementById('all-posts-container');
         container.innerHTML = '<div class="md:col-span-3 text-center py-12 text-gray-500"><div class="loading-animation"></div> Loading all public blogs...</div>';
+        // Clear cache when reloading feed
+        Object.keys(fullPostCache).forEach(key => delete fullPostCache[key]);
 
         try {
             const response = await fetch(`${BASE_URL}/post/all`);
@@ -466,6 +465,7 @@
 
         const container = document.getElementById('my-posts-container');
         container.innerHTML = '<div class="md:col-span-3 text-center py-12 text-gray-500"><div class="loading-animation"></div> Loading your private dashboard...</div>';
+        Object.keys(fullPostCache).forEach(key => delete fullPostCache[key]);
 
         try {
             const response = await fetch(`${BASE_URL}/post/getPosts`, {
@@ -500,7 +500,6 @@
         if (!userCredentials) return showModal('You must be logged in to edit posts.', true);
 
         try {
-            // Fetch the full post content using a protected endpoint
             const response = await fetch(`${BASE_URL}/post/getPost/${id}`, {
                 headers: getAuthHeader()
             });
@@ -510,7 +509,7 @@
             document.getElementById('post-title').value = post.title;
             document.getElementById('post-content').value = post.content;
             document.getElementById('post-crud-title').textContent = 'Edit Post: ' + post.title;
-            document.getElementById('ai-summary-output').classList.add('hidden'); // Clear old summary preview
+            document.getElementById('ai-summary-output').classList.add('hidden');
             navigateTo('post-crud-section');
 
         } catch (error) {
@@ -526,7 +525,6 @@
         }
 
         const id = document.getElementById('post-id').value;
-        // Use .value.trim() for title, but keep content raw for posting.
         const title = document.getElementById('post-title').value.trim();
         const content = document.getElementById('post-content').value;
         const messageEl = document.getElementById('post-message');
@@ -550,7 +548,6 @@
                 body: JSON.stringify(postData)
             });
 
-            // This call is now fixed and should handle success/error responses correctly.
             const result = await handleProtectedResponse(response);
 
             messageEl.className = 'text-center mt-4 text-sm font-medium text-green-600';
@@ -570,9 +567,6 @@
 
     const deletePost = async (id) => {
         if (!userCredentials) return showModal('You must be logged in to delete posts.', true);
-
-        // NOTE: Removed `confirm()` as it is not supported in the iframe environment.
-        // A dedicated confirmation modal should be implemented for production use.
         showModal('Attempting to delete post...');
 
         try {
@@ -580,10 +574,9 @@
                 method: 'DELETE',
                 headers: getAuthHeader()
             });
-            // Check status using the protected handler
             const result = await handleProtectedResponse(response);
             showModal(result, false);
-            loadMyPosts(); // Refresh list
+            loadMyPosts(); 
 
         } catch (error) {
             showModal('Error deleting post: ' + error.message, true);
@@ -592,7 +585,6 @@
 
     // --- AI SUMMARY HANDLERS ---
 
-    // Summarize content currently in the input form (for preview before saving)
     const generateSummary = async () => {
         const content = document.getElementById('post-content').value.trim();
         const summaryOutputEl = document.getElementById('ai-summary-output');
@@ -608,11 +600,10 @@
         summaryOutputEl.classList.remove('hidden');
 
         try {
-            // Hits /ai/gemini/generate which summarizes the raw content
             const response = await fetch(`${BASE_URL}/ai/gemini/generate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: content // Directly sends the string content
+                body: content
             });
 
             const summary = await response.text();
@@ -622,11 +613,12 @@
         }
     };
 
-    // Summarize an existing post from the database
     const summarizePost = async (postId) => {
         const summaryBox = document.getElementById(`summary-${postId}`);
         const button = document.getElementById(`summarize-btn-${postId}`);
         const summaryContentEl = summaryBox.querySelector('.summary-content');
+
+        if (!summaryBox) return; // Guard clause
 
         // Toggle visibility
         if (!summaryBox.classList.contains('hidden')) {
@@ -640,7 +632,6 @@
         button.textContent = 'Hide Summary';
 
         try {
-            // Hits /ai/gemini/summarize/{postId} which retrieves post and summarizes
             const response = await fetch(`${BASE_URL}/ai/gemini/summarize/${postId}`);
             const summary = await response.text();
 
