@@ -12,50 +12,41 @@ import java.util.Map;
 
 @Service
 public class GeminiService {
-
     @Value("${API_KEY}")
     private String apiKey;
-
-    private final RestClient client = RestClient.create();
-    private final ObjectMapper mapper = new ObjectMapper();
-
-    public String generateContent(String prompt) {
+    RestClient client = RestClient.create();
+    ObjectMapper mapper = new ObjectMapper();
+    private String extractText(String response) {
         try {
-            String url = "https://openrouter.ai/api/v1/chat/completions";
-
-            Map<String, Object> requestBody = Map.of(
-                    "model", "google/gemini-flash-1.5",
-                    "messages", List.of(
-                            Map.of(
-                                    "role", "user",
-                                    "content", prompt
-                            )
-                    )
-            );
-
-            String response = client.post()
-                    .uri(url)
-                    .header("Authorization", "Bearer " + apiKey)
-                    .header("HTTP-Referer", "https://your-domain.com")
-                    .header("X-Title", "IntelliBlog") 
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(requestBody)
-                    .retrieve()
-                    .body(String.class);
-
             JsonNode root = mapper.readTree(response);
-
-            return root
-                    .path("choices")
+            return root.path("candidates")
                     .get(0)
-                    .path("message")
                     .path("content")
+                    .path("parts")
+                    .get(0)
+                    .path("text")
                     .asText()
                     .trim();
-
         } catch (Exception e) {
-            e.printStackTrace();
-            return "AI summary generation failed.";
+            return "Summary generation failed.";
         }
+    }
+
+    public String generateContent(String prompt) {
+        String url = "https://generativelanguage.googleapis.com/v1beta/models/"
+                + "gemini-2.5-flash-lite:generateContent?key=" + apiKey;
+
+        Map<String, Object> requestBody = Map.of(
+                "contents", List.of(Map.of("parts", List.of(Map.of("text", prompt))))
+        );
+
+        String response = client.post()
+                .uri(url)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(requestBody)
+                .retrieve()
+                .body(String.class);
+
+        return extractText(response);
     }
 }
