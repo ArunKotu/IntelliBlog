@@ -92,6 +92,11 @@
 
                 <div id="login-container" class="bg-white p-8 rounded-xl shadow-lg border border-gray-200 hidden">
                     <h2 class="text-2xl font-bold text-gray-700 mb-6 text-center">Login to IntelliBlog</h2>
+                    <p class="text-sm text-center text-gray-500 mb-4">
+                        To test the application, use: 
+                        <span class="font-semibold">Email: test@gmail.com</span> | 
+                        <span class="font-semibold">Password: mypassword</span>
+                    </p>
                     <input type="email" id="login-email" placeholder="Email" class="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
                     <input type="password" id="login-password" placeholder="Password" class="w-full p-3 mb-6 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
                     <button onclick="handleLogin()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg shadow-md transition duration-150 ease-in-out">Login</button>
@@ -311,7 +316,7 @@
     };
 
 
-    // --- NEW CORE LOGIC: In-Card Content Toggling ---
+    // --- CORE LOGIC: In-Card Content Toggling ---
 
     /**
      * Toggles the display of the full content within the post card.
@@ -319,14 +324,13 @@
     const togglePostContent = async (postId, cardEl, post) => {
         const fullContentEl = cardEl.querySelector('.full-post-content');
         const snippetEl = cardEl.querySelector('.post-card-snippet');
-        const toggleButton = cardEl.querySelector('.toggle-content-btn');
         
         // --- 1. Collapse the view ---
         if (cardEl.classList.contains('expanded')) {
             fullContentEl.classList.add('hidden');
             snippetEl.classList.remove('hidden');
             cardEl.classList.remove('expanded');
-            toggleButton.textContent = 'Read Full Blog \u2192'; // Right arrow
+            // Remove specific visual indicator of expansion if needed, but no button text to change
             return;
         }
 
@@ -335,8 +339,7 @@
         snippetEl.classList.add('hidden');
         fullContentEl.classList.remove('hidden');
         fullContentEl.innerHTML = '<div class="text-center py-4 text-indigo-500"><div class="loading-animation"></div> Loading full post...</div>';
-        toggleButton.textContent = '\u2190 Hide Full Blog'; // Left arrow
-
+        
         // Check cache first
         if (fullPostCache[postId]) {
             fullContentEl.textContent = fullPostCache[postId];
@@ -371,6 +374,7 @@
 
     const createPostCard = (post, isAuthorView = false) => {
         const card = document.createElement('div');
+        // The entire card is now the click target for toggle
         card.className = 'post-card bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition duration-300 border border-gray-100 p-6 flex flex-col justify-between cursor-pointer';
         
         // Make the card body clickable to toggle content
@@ -395,7 +399,7 @@
 
         // Create a content snippet (first ~200 characters)
         const contentSnippet = post.content ? post.content.substring(0, 200) : 'Content loading...';
-        const contentDisplay = contentSnippet + (post.content && post.content.length > 200 ? '...' : '');
+        const contentDisplay = contentSnippet + (post.content && post.content.length > 200 ? '... (Click to view full blog)' : ' (Click to view full blog)');
 
         card.innerHTML = `
             <div>
@@ -415,12 +419,7 @@
                     <div class="summary-content text-sm mt-1">Click Summarize to generate.</div>
                 </div>
 
-                <div class="flex flex-wrap gap-2 mt-2 justify-between items-center">
-                    <button onclick="togglePostContent('${post.id}', this.closest('.post-card'), post)" 
-                        class="toggle-content-btn bg-green-500 hover:bg-green-600 text-white font-medium py-1 px-3 rounded-lg text-xs transition duration-150 ease-in-out">
-                        Read Full Blog &rarr;
-                    </button>
-                    
+                <div class="flex flex-wrap gap-2 mt-2 justify-end items-center">
                     <button id="summarize-btn-${post.id}" onclick="summarizePost('${post.id}')" class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-1 px-3 rounded-lg text-xs transition duration-150 ease-in-out">
                         Summarize Blog (AI)
                     </button>
