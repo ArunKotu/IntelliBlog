@@ -3,6 +3,7 @@ package com.Intelli_Blog.IntelliBlog.Controller;
 import com.Intelli_Blog.IntelliBlog.Service.GeminiService;
 import com.Intelli_Blog.IntelliBlog.Service.PostService;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
 
 @RestController
 @RequestMapping("/ai/gemini")
