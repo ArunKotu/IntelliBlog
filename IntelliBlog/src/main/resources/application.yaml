@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: IntelliBlog
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: intelliblog
+    auto-index:
+      creation: true
+gemini:
+  api:
+    key: "${API_KEY}"
