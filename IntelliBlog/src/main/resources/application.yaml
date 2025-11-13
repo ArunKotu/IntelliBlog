@@ -3,9 +3,7 @@ spring:
     name: IntelliBlog
   data:
     mongodb:
-      host: localhost
-      port: 27017
-      database: intelliblog
+      url: "${MONGO_URL}"
     auto-index:
       creation: true
 gemini:
