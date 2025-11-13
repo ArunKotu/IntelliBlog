@@ -14,17 +14,23 @@ public class GeminiController {
         this.postService = postService;
         this.service = service;
     }
-    @PostMapping("/generate")
-    public String generate(@RequestBody String blogText) {
-       String prompt =
+   @PostMapping("/generate")
+public ResponseEntity<String> generate(@RequestBody String blogText) {
+    try {
+        String prompt =
                 "Summarize the following blog in 3–4 concise sentences. "
                         + "Do not exceed 4 sentences. "
                         + "Do not include headings, bullet points, or formatting. "
                         + "Return only the summary text.\n\n"
                         + blogText;
 
-        return service.generateContent(prompt);
+        return ResponseEntity.ok(service.generateContent(prompt));
+
+    } catch (Exception e) {
+        return ResponseEntity.status(500).body("AI summarization failed.");
     }
+}
+
     @GetMapping("/summarize/{postId}")
     public String summarizeFromDb(@PathVariable String postId) {
         return postService.summarize(postId);
