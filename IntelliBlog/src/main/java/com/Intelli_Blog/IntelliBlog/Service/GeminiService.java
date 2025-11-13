@@ -33,6 +33,7 @@ public class GeminiService {
     }
 
     public String generateContent(String prompt) {
+    try {
         String url = "https://generativelanguage.googleapis.com/v1beta/models/"
                 + "gemini-2.5-flash-lite:generateContent?key=" + apiKey;
 
@@ -48,5 +49,10 @@ public class GeminiService {
                 .body(String.class);
 
         return extractText(response);
+
+    } catch (Exception e) {
+        return "AI summary generation failed. (Backend Error)";
     }
+}
+
 }
