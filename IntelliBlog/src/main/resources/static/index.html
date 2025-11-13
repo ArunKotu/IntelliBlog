@@ -4,13 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IntelliBlog - AI Enhanced Content</title>
-    <!-- Load Tailwind CSS -->
+  
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Custom font and basic setup */
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         .page-container { min-height: calc(100vh - 80px); }
-        /* Style for the post content to preserve formatting */
         #post-content, .post-card-content { white-space: pre-wrap; word-break: break-word; }
         .loading-animation {
             border: 4px solid #f3f3f3;
@@ -29,103 +27,92 @@
         }
     </style>
 </head>
+
 <body class="bg-gray-50">
-<!-- Main Application Container -->
 <div id="app">
-    <!-- Navigation Header -->
+
+
     <header class="bg-indigo-600 shadow-lg sticky top-0 z-10">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-            <h1 class="text-3xl font-extrabold text-white tracking-tight">
-                IntelliBlog
-            </h1>
+            <h1 class="text-3xl font-extrabold text-white tracking-tight">IntelliBlog</h1>
             <nav class="flex space-x-2 sm:space-x-4">
-                <button id="nav-home" class="text-white hover:text-indigo-200 transition duration-150 ease-in-out font-medium">Home</button>
+                <button id="nav-home" class="text-white hover:text-indigo-200 font-medium">Home</button>
+
                 <div id="auth-controls" class="flex space-x-2 sm:space-x-4">
-                    <button id="nav-register" class="px-3 py-1 bg-indigo-500 hover:bg-indigo-700 text-white rounded-lg shadow-md transition duration-150 ease-in-out font-medium text-sm">Register</button>
-                    <button id="nav-login" class="px-3 py-1 bg-green-500 hover:bg-green-700 text-white rounded-lg shadow-md transition duration-150 ease-in-out font-medium text-sm">Login</button>
+                    <button id="nav-register" class="px-3 py-1 bg-indigo-500 hover:bg-indigo-700 text-white rounded-lg shadow-md text-sm">Register</button>
+                    <button id="nav-login" class="px-3 py-1 bg-green-500 hover:bg-green-700 text-white rounded-lg shadow-md text-sm">Login</button>
                 </div>
+
                 <div id="user-controls" class="hidden flex space-x-2 sm:space-x-4 items-center">
-                    <button id="nav-my-posts" class="text-white hover:text-indigo-200 transition duration-150 ease-in-out font-medium">My Posts</button>
-                    <button id="nav-create-post" class="px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-indigo-900 rounded-lg shadow-md transition duration-150 ease-in-out font-medium text-sm">New Post</button>
-                    <button id="nav-logout" class="px-3 py-1 bg-red-500 hover:bg-red-700 text-white rounded-lg shadow-md transition duration-150 ease-in-out font-medium text-sm">Logout</button>
+                    <button id="nav-my-posts" class="text-white hover:text-indigo-200 font-medium">My Posts</button>
+                    <button id="nav-create-post" class="px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-indigo-900 rounded-lg shadow-md text-sm">New Post</button>
+                    <button id="nav-logout" class="px-3 py-1 bg-red-500 hover:bg-red-700 text-white rounded-lg shadow-md text-sm">Logout</button>
                 </div>
             </nav>
         </div>
     </header>
 
-    <!-- Main Content Area -->
     <main class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 page-container">
-        <!-- Global Message/Modal Area -->
-        <div id="message-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 transition-opacity duration-300">
-            <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full transform transition-all duration-300 scale-100">
-                <p id="modal-text" class="text-lg font-semibold text-gray-700 mb-4"></p>
-                <button onclick="closeModal()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition duration-150 ease-in-out">Close</button>
-            </div>
-        </div>
 
-        <!-- 1. All Posts Section (Home) -->
-        <section id="home-section" class="view-section transition-opacity duration-500">
+      
+        <section id="home-section" class="view-section">
             <h2 class="text-4xl font-bold text-gray-800 mb-8 border-b-2 border-indigo-400 pb-2">Public Feed</h2>
             <div id="all-posts-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Posts will be injected here -->
                 <div class="md:col-span-3 text-center py-12 text-gray-500">Loading posts...</div>
             </div>
         </section>
 
-        <!-- 2. Authentication Section (Login/Register) -->
         <section id="auth-section" class="view-section hidden flex justify-center py-16">
             <div class="w-full max-w-lg space-y-8">
-                <!-- Register Form -->
+
+       
                 <div id="register-container" class="bg-white p-8 rounded-xl shadow-lg border border-gray-200">
                     <h2 class="text-2xl font-bold text-gray-700 mb-6 text-center">Create Account</h2>
-                    <input type="text" id="register-username" placeholder="Username" class="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
-                    <input type="email" id="register-email" placeholder="Email" class="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
-                    <input type="password" id="register-password" placeholder="Password" class="w-full p-3 mb-6 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
-                    <button onclick="handleRegister()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg shadow-md transition duration-150 ease-in-out">Register</button>
+                    <input id="register-username" placeholder="Username" class="w-full p-3 mb-4 border rounded-lg">
+                    <input id="register-email" placeholder="Email" class="w-full p-3 mb-4 border rounded-lg">
+                    <input id="register-password" type="password" placeholder="Password" class="w-full p-3 mb-6 border rounded-lg">
+                    <button onclick="handleRegister()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg">Register</button>
                     <p id="register-message" class="text-center mt-4 text-sm"></p>
-                    <p class="text-center text-sm text-gray-500 mt-6">Already have an account? <span onclick="showLogin()" class="text-indigo-600 hover:text-indigo-800 cursor-pointer font-medium">Log In</span></p>
+                    <p class="text-center text-sm text-gray-500 mt-6">Already have an account?
+                        <span onclick="showLogin()" class="text-indigo-600 hover:text-indigo-800 cursor-pointer font-medium">Log In</span>
+                    </p>
                 </div>
 
-                <!-- Login Form -->
-                <div id="login-container" class="bg-white p-8 rounded-xl shadow-lg border border-gray-200 hidden">
-                    <h2 class="text-2xl font-bold text-gray-700 mb-6 text-center">Login to IntelliBlog</h2>
-                    <input type="email" id="login-email" placeholder="Email" class="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
-                    <input type="password" id="login-password" placeholder="Password" class="w-full p-3 mb-6 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
-                    <button onclick="handleLogin()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg shadow-md transition duration-150 ease-in-out">Login</button>
+                <div id="login-container" class="bg-white p-8 rounded-xl shadow-lg border hidden">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-6 text-center">Login</hh2>
+                    <input id="login-email" placeholder="Email" class="w-full p-3 mb-4 border rounded-lg">
+                    <input id="login-password" type="password" placeholder="Password" class="w-full p-3 mb-6 border rounded-lg">
+                    <button onclick="handleLogin()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg">Login</button>
                     <p id="login-message" class="text-center mt-4 text-sm"></p>
-                    <p class="text-center text-sm text-gray-500 mt-6">Need an account? <span onclick="showRegister()" class="text-green-600 hover:text-green-800 cursor-pointer font-medium">Register</span></p>
                 </div>
+
             </div>
         </section>
 
-        <!-- 3. Create/Edit Post Section -->
+   
         <section id="post-crud-section" class="view-section hidden py-16">
-            <div class="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-lg border border-gray-200">
-                <h2 id="post-crud-title" class="text-3xl font-bold text-gray-800 mb-6 border-b pb-3">Create New Post</h2>
-                <input type="hidden" id="post-id">
-                <input type="text" id="post-title" placeholder="A Catchy Blog Title" class="w-full p-3 mb-4 text-lg font-semibold border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
-                <textarea id="post-content" placeholder="Write your comprehensive blog content here..." class="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 h-64 resize-none"></textarea>
+            <div class="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-lg border">
 
-                <button id="generate-summary-btn" onclick="generateSummary()" class="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out mb-4">
-                    Generate AI Summary for Content
-                </button>
+                <h2 id="post-crud-title" class="text-3xl font-bold text-gray-800 mb-6 pb-3 border-b">Create New Post</h2>
+                <input type="hidden" id="post-id">
+                <input id="post-title" placeholder="Title" class="w-full p-3 mb-4 border rounded-lg font-semibold">
+                <textarea id="post-content" placeholder="Write full blog..." class="w-full p-3 mb-4 border rounded-lg h-64 resize-none"></textarea>
+
+                <button onclick="generateSummary()" class="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg mb-4">Generate AI Summary</button>
+
                 <div id="ai-summary-output" class="p-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 rounded-r-lg hidden mb-6">
                     <p class="font-bold">AI Summary Preview:</p>
                     <p id="summary-text" class="text-sm mt-1"></p>
                 </div>
 
-                <button id="save-post-btn" onclick="savePost()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg shadow-xl transition duration-150 ease-in-out text-lg">
-                    Save Post
-                </button>
-                <p id="post-message" class="text-center mt-4 text-sm font-medium"></p>
+                <button onclick="savePost()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg text-lg">Save Post</button>
+                <p id="post-message" class="text-center mt-4 text-sm"></p>
             </div>
         </section>
 
-        <!-- 4. My Posts Section -->
-        <section id="my-posts-section" class="view-section hidden transition-opacity duration-500">
+        <section id="my-posts-section" class="view-section hidden">
             <h2 class="text-4xl font-bold text-gray-800 mb-8 border-b-2 border-indigo-400 pb-2">My Blog Dashboard</h2>
             <div id="my-posts-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- User's posts will be injected here -->
                 <div class="md:col-span-3 text-center py-12 text-gray-500">Loading your posts...</div>
             </div>
         </section>
@@ -133,475 +120,54 @@
 </div>
 
 <script>
-    // --- JavaScript Implementation ---
-    const BASE_URL = 'https://intelliblog-6.onrender.com';
-    let userCredentials = null; // Stores { email, password } for Basic Auth
 
-    // --- Core UI Helpers ---
+const BASE_URL = 'https://intelliblog-6.onrender.com';
+let userCredentials = null;
 
-    const showModal = (text, isError = false) => {
-        const modal = document.getElementById('message-modal');
-        const modalText = document.getElementById('modal-text');
-        modalText.textContent = text;
-        modalText.className = isError ? 'text-lg font-semibold text-red-700 mb-4' : 'text-lg font-semibold text-gray-700 mb-4';
-        modal.classList.remove('hidden');
-    };
+const createPostCard = (post, isAuthorView = false) => {
 
-    const closeModal = () => {
-        document.getElementById('message-modal').classList.add('hidden');
-    };
+    const card = document.createElement('div');
+    card.className = 'post-card bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition duration-300 border border-gray-100 p-6 flex flex-col justify-between';
 
-    const hideAllSections = () => {
-        document.querySelectorAll('.view-section').forEach(sec => sec.classList.add('hidden'));
-    };
-
-    const updateNavButtons = (isLoggedIn) => {
-        document.getElementById('auth-controls').classList.toggle('hidden', isLoggedIn);
-        document.getElementById('user-controls').classList.toggle('hidden', !isLoggedIn);
-    };
-
-    const navigateTo = (sectionId) => {
-        hideAllSections();
-        document.getElementById(sectionId).classList.remove('hidden');
-
-        if (sectionId === 'home-section') {
-            loadAllPosts();
-        } else if (sectionId === 'my-posts-section' && userCredentials) {
-            loadMyPosts();
-        }
-    };
-
-    const showLogin = () => {
-        document.getElementById('register-container').classList.add('hidden');
-        document.getElementById('login-container').classList.remove('hidden');
-        document.getElementById('register-message').textContent = '';
-        document.getElementById('login-message').textContent = '';
-    };
-
-    const showRegister = () => {
-        document.getElementById('login-container').classList.add('hidden');
-        document.getElementById('register-container').classList.remove('hidden');
-        document.getElementById('register-message').textContent = '';
-        document.getElementById('login-message').textContent = '';
-    };
-
-
-    // --- API & Auth Utilities ---
-
-    const getAuthHeader = () => {
-        if (!userCredentials) return {};
-        const encoded = btoa(`${userCredentials.email}:${userCredentials.password}`);
-        return {
-            'Authorization': `Basic ${encoded}`,
-            'Content-Type': 'application/json'
-        };
-    };
-
-    // --- FIX: Refactored to read the response stream only once. ---
-    const handleProtectedResponse = async (response) => {
-        // 1. Read the body stream ONCE as text.
-        let responseText = '';
-        try {
-            responseText = await response.text();
-        } catch (e) {
-            console.error("Error reading response body stream:", e);
-            // responseText remains empty string on error
-        }
-
-        // 2. Handle unauthorized/error status codes (4xx/5xx)
-        if (!response.ok) {
-            if (response.status === 401 || response.status === 403) {
-                showModal("Session expired or access denied. Please log in again.", true);
-                userCredentials = null;
-                updateNavButtons(false);
-                navigateTo('auth-section');
-                throw new Error("Unauthorized");
-            }
-            // Throw the error using the extracted text (which might contain the server-side error message)
-            throw new Error(responseText || `HTTP error! status: ${response.status}`);
-        }
-
-        // 3. Handle success (2xx)
-        // Try to parse the text as JSON if it looks like JSON (starts with { or [).
-        const trimmedText = responseText.trim();
-        if (trimmedText.startsWith('{') || trimmedText.startsWith('[')) {
-            try {
-                return JSON.parse(trimmedText);
-            } catch (e) {
-                // If JSON parsing fails, return the raw text instead.
-                return responseText;
-            }
-        }
-
-        // If it's not JSON (e.g., a plain text "Success" message), return the raw text.
-        return responseText;
-    };
-    // -----------------------------------------------------------------
-
-
-    // --- AUTH HANDLERS ---
-
-    const handleRegister = async () => {
-        const username = document.getElementById('register-username').value.trim();
-        const email = document.getElementById('register-email').value.trim();
-        const password = document.getElementById('register-password').value.trim();
-        const messageEl = document.getElementById('register-message');
-        messageEl.textContent = 'Registering...';
-        messageEl.style.color = 'gray';
-
-        if (!username || !email || !password) {
-            messageEl.textContent = 'All fields are required.';
-            messageEl.style.color = 'red';
-            return;
-        }
-
-        const dto = { username, email, password };
-
-        try {
-            const response = await fetch(`${BASE_URL}/auth/register`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(dto)
-            });
-
-            // Use the new protected response handler for common status checks
-            const result = await handleProtectedResponse(response);
-
-            messageEl.style.color = 'green';
-            messageEl.textContent = "Registration successful! Proceed to log in.";
-            showLogin();
-        } catch (error) {
-            messageEl.style.color = 'red';
-            // Display the specific error message from the responseText
-            messageEl.textContent = error.message.includes('Unauthorized') ? 'Registration failed.' : error.message;
-        }
-    };
-
-    const handleLogin = async () => {
-        const email = document.getElementById('login-email').value.trim();
-        const password = document.getElementById('login-password').value.trim();
-        const messageEl = document.getElementById('login-message');
-        messageEl.textContent = 'Logging in...';
-        messageEl.style.color = 'gray';
-
-        if (!email || !password) {
-            messageEl.textContent = 'Email and password are required.';
-            messageEl.style.color = 'red';
-            return;
-        }
-
-        const tempCreds = { email, password };
-        const encoded = btoa(`${email}:${password}`);
-
-        try {
-            // Use the /auth/login endpoint for the Basic Auth check
-            const response = await fetch(`${BASE_URL}/auth/login`, {
-                method: 'GET',
-                headers: { 'Authorization': `Basic ${encoded}` }
-            });
-
-            if (response.ok) {
-                userCredentials = tempCreds;
-                messageEl.style.color = 'green';
-                messageEl.textContent = 'Login successful!';
-                updateNavButtons(true);
-                navigateTo('home-section');
-            } else {
-                messageEl.style.color = 'red';
-                messageEl.textContent = 'Login failed. Check email and password.';
-            }
-        } catch (error) {
-            messageEl.style.color = 'red';
-            messageEl.textContent = 'Network error or backend issue.';
-        }
-    };
-
-    const handleLogout = () => {
-        // Clear credentials and update UI
-        userCredentials = null;
-        updateNavButtons(false);
-        navigateTo('home-section');
-        showModal('You have been successfully logged out.', false);
-    };
-
-
-    // --- POST DISPLAY & CRUD HANDLERS ---
-
-    const createPostCard = (post, isAuthorView = false) => {
-        const card = document.createElement('div');
-        card.className = 'post-card bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition duration-300 border border-gray-100 p-6 flex flex-col justify-between';
-
-        let buttonsHtml = '';
-        if (isAuthorView) {
-            buttonsHtml = `
-                <div class="flex space-x-2 mt-4">
-                    <button onclick="editPost('${post.id}')" class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg text-sm">Edit</button>
-                    <button onclick="deletePost('${post.id}')" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg text-sm">Delete</button>
-                </div>
-            `;
-        }
-
-        const date = new Date(post.createdAt || post.updatedAt).toLocaleDateString();
-
-        // Create a content snippet (first 200 characters)
-        const contentSnippet = post.content.substring(0, 200);
-        const contentDisplay = contentSnippet + (post.content.length > 200 ? '...' : '');
-
-        card.innerHTML = `
-            <div>
-                <h3 class="text-2xl font-bold text-gray-800 mb-2">${post.title}</h3>
-                <p class="text-sm text-indigo-500 mb-4">By: ${post.authorEmail}</p>
-
-                <!-- NEW: Display the content snippet here -->
-                <p class="post-card-snippet text-gray-700 text-base mb-4 italic">
-                    ${contentDisplay}
-                </p>
-
-                <div id="summary-${post.id}" class="summary-box p-3 bg-indigo-50 text-indigo-800 border-l-4 border-indigo-400 rounded-r-lg mb-4 hidden">
-                    <p class="font-bold">AI Summary:</p>
-                    <div class="summary-content text-sm mt-1">Click Summarize to generate.</div>
-                </div>
-
-                <button id="summarize-btn-${post.id}" onclick="summarizePost('${post.id}')" class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-1 px-3 rounded-lg text-xs transition duration-150 ease-in-out">
-                    Summarize Blog (AI)
-                </button>
-            </div>
-
-            <div class="mt-4 pt-4 border-t border-gray-100">
-                <p class="text-xs text-gray-500">Last updated: ${date}</p>
-                ${buttonsHtml}
+    let buttonsHtml = '';
+    if (isAuthorView) {
+        buttonsHtml = `
+            <div class="flex space-x-2 mt-4">
+                <button onclick="editPost('${post.id}')" class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded-lg text-sm">Edit</button>
+                <button onclick="deletePost('${post.id}')" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg text-sm">Delete</button>
             </div>
         `;
-        return card;
-    };
+    }
 
-    const loadAllPosts = async () => {
-        const container = document.getElementById('all-posts-container');
-        container.innerHTML = '<div class="md:col-span-3 text-center py-12 text-gray-500"><div class="loading-animation"></div> Loading all public blogs...</div>';
+    const date = new Date(post.createdAt || post.updatedAt).toLocaleDateString();
 
-        try {
-            const response = await fetch(`${BASE_URL}/post/all`);
-            const posts = await response.json();
-            container.innerHTML = '';
+    card.innerHTML = `
+        <div>
+            <h3 class="text-2xl font-bold text-gray-800 mb-2">${post.title}</h3>
+            <p class="text-sm text-indigo-500 mb-4">By: ${post.authorEmail}</p>
 
-            if (posts.length === 0) {
-                container.innerHTML = '<div class="md:col-span-3 text-center py-12 text-gray-500">No public posts available yet. Be the first to post!</div>';
-                return;
-            }
-            posts.forEach(post => container.appendChild(createPostCard(post, false)));
-        } catch (error) {
-            container.innerHTML = `<div class="md:col-span-3 text-center py-12 text-red-500">Error loading posts. Is the backend running on ${BASE_URL}?</div>`;
-        }
-    };
+            <!-- FULL BLOG CONTENT -->
+            <p class="post-card-content text-gray-700 whitespace-pre-wrap break-words mb-4">
+                ${post.content}
+            </p>
 
-    const loadMyPosts = async () => {
-        if (!userCredentials) {
-             document.getElementById('my-posts-container').innerHTML = '<div class="md:col-span-3 text-center py-12 text-red-500">Please log in to view your posts.</div>';
-             return;
-        }
+            <div id="summary-${post.id}" class="hidden p-3 bg-indigo-50 border-l-4 border-indigo-400 rounded-r-lg mb-4">
+                <p class="font-bold">AI Summary:</p>
+                <div class="summary-content text-sm mt-1"></div>
+            </div>
 
-        const container = document.getElementById('my-posts-container');
-        container.innerHTML = '<div class="md:col-span-3 text-center py-12 text-gray-500"><div class="loading-animation"></div> Loading your private dashboard...</div>';
+            <button id="summarize-btn-${post.id}" onclick="summarizePost('${post.id}')" class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-1 px-3 rounded-lg text-xs">Summarize Blog (AI)</button>
+        </div>
 
-        try {
-            const response = await fetch(`${BASE_URL}/post/getPosts`, {
-                headers: getAuthHeader()
-            });
-            const posts = await handleProtectedResponse(response);
-            container.innerHTML = '';
+        <div class="mt-4 pt-4 border-t border-gray-100">
+            <p class="text-xs text-gray-500">Last updated: ${date}</p>
+            ${buttonsHtml}
+        </div>
+    `;
 
-            if (posts.length === 0) {
-                container.innerHTML = '<div class="md:col-span-3 text-center py-12 text-gray-500">You haven\'t created any posts yet. Click "New Post" to start!</div>';
-                return;
-            }
-            posts.forEach(post => container.appendChild(createPostCard(post, true)));
-        } catch (error) {
-            if (error.message !== 'Unauthorized') {
-                container.innerHTML = `<div class="md:col-span-3 text-center py-12 text-red-500">Error loading your posts. ${error.message}</div>`;
-            }
-        }
-    };
+    return card;
+};
 
-    const resetPostForm = () => {
-        document.getElementById('post-id').value = '';
-        document.getElementById('post-title').value = '';
-        document.getElementById('post-content').value = '';
-        document.getElementById('post-crud-title').textContent = 'Create New Post';
-        document.getElementById('post-message').textContent = '';
-        document.getElementById('ai-summary-output').classList.add('hidden');
-        document.getElementById('summary-text').textContent = '';
-    };
-
-    const editPost = async (id) => {
-        if (!userCredentials) return showModal('You must be logged in to edit posts.', true);
-
-        try {
-            // Fetch the full post content using a protected endpoint
-            const response = await fetch(`${BASE_URL}/post/getPost/${id}`, {
-                headers: getAuthHeader()
-            });
-            const post = await handleProtectedResponse(response);
-
-            document.getElementById('post-id').value = post.id;
-            document.getElementById('post-title').value = post.title;
-            document.getElementById('post-content').value = post.content;
-            document.getElementById('post-crud-title').textContent = 'Edit Post: ' + post.title;
-            document.getElementById('ai-summary-output').classList.add('hidden'); // Clear old summary preview
-            navigateTo('post-crud-section');
-
-        } catch (error) {
-            showModal('Could not load post for editing. ' + error.message, true);
-        }
-    };
-
-    const savePost = async () => {
-        if (!userCredentials) {
-            showModal('You must be logged in to save a post.', true);
-            navigateTo('auth-section');
-            return;
-        }
-
-        const id = document.getElementById('post-id').value;
-        // Use .value.trim() for title, but keep content raw for posting.
-        const title = document.getElementById('post-title').value.trim();
-        const content = document.getElementById('post-content').value;
-        const messageEl = document.getElementById('post-message');
-        messageEl.textContent = 'Saving...';
-        messageEl.className = 'text-center mt-4 text-sm font-medium text-gray-500';
-
-        if (!title || !content) {
-            messageEl.textContent = 'Title and Content cannot be empty.';
-            messageEl.className = 'text-center mt-4 text-sm font-medium text-red-500';
-            return;
-        }
-
-        const postData = { title, content };
-        const method = id ? 'PUT' : 'POST';
-        const url = id ? `${BASE_URL}/post/update/${id}` : `${BASE_URL}/post/save`;
-
-        try {
-            const response = await fetch(url, {
-                method: method,
-                headers: getAuthHeader(),
-                body: JSON.stringify(postData)
-            });
-
-            // This call is now fixed and should handle success/error responses correctly.
-            const result = await handleProtectedResponse(response);
-
-            messageEl.className = 'text-center mt-4 text-sm font-medium text-green-600';
-            if (id) {
-                messageEl.textContent = 'Post updated successfully!';
-            } else {
-                messageEl.textContent = 'Post created successfully!';
-                resetPostForm();
-            }
-            setTimeout(() => navigateTo('my-posts-section'), 1500);
-
-        } catch (error) {
-            messageEl.className = 'text-center mt-4 text-sm font-medium text-red-600';
-            messageEl.textContent = 'Error saving post: ' + error.message;
-        }
-    };
-
-    const deletePost = async (id) => {
-        if (!userCredentials) return showModal('You must be logged in to delete posts.', true);
-
-        // NOTE: Removed `confirm()` as it is not supported in the iframe environment.
-        // A dedicated confirmation modal should be implemented for production use.
-        showModal('Attempting to delete post...');
-
-        try {
-            const response = await fetch(`${BASE_URL}/post/delete/${id}`, {
-                method: 'DELETE',
-                headers: getAuthHeader()
-            });
-            // Check status using the protected handler
-            const result = await handleProtectedResponse(response);
-            showModal(result, false);
-            loadMyPosts(); // Refresh list
-
-        } catch (error) {
-            showModal('Error deleting post: ' + error.message, true);
-        }
-    };
-
-    // --- AI SUMMARY HANDLERS ---
-
-    // Summarize content currently in the input form (for preview before saving)
-    const generateSummary = async () => {
-        const content = document.getElementById('post-content').value.trim();
-        const summaryOutputEl = document.getElementById('ai-summary-output');
-        const summaryTextEl = document.getElementById('summary-text');
-
-        if (content.length < 100) {
-            summaryTextEl.textContent = 'Content must be at least 100 characters long for AI summarization.';
-            summaryOutputEl.classList.remove('hidden');
-            return;
-        }
-
-        summaryTextEl.innerHTML = '<div class="loading-animation"></div> Generating AI summary... This may take a moment.';
-        summaryOutputEl.classList.remove('hidden');
-
-        try {
-            // Hits /ai/gemini/generate which summarizes the raw content
-            const response = await fetch(`${BASE_URL}/ai/gemini/generate`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: content // Directly sends the string content
-            });
-
-            const summary = await response.text();
-            summaryTextEl.textContent = summary;
-        } catch (error) {
-            summaryTextEl.textContent = 'Error generating summary. Backend AI service may be unavailable.';
-        }
-    };
-
-    // Summarize an existing post from the database
-    const summarizePost = async (postId) => {
-        const summaryBox = document.getElementById(`summary-${postId}`);
-        const button = document.getElementById(`summarize-btn-${postId}`);
-        const summaryContentEl = summaryBox.querySelector('.summary-content');
-
-        // Toggle visibility
-        if (!summaryBox.classList.contains('hidden')) {
-            summaryBox.classList.add('hidden');
-            button.textContent = 'Summarize Blog (AI)';
-            return;
-        }
-
-        summaryContentEl.innerHTML = '<div class="loading-animation"></div> Generating summary...';
-        summaryBox.classList.remove('hidden');
-        button.textContent = 'Hide Summary';
-
-        try {
-            // Hits /ai/gemini/summarize/{postId} which retrieves post and summarizes
-            const response = await fetch(`${BASE_URL}/ai/gemini/summarize/${postId}`);
-            const summary = await response.text();
-
-            summaryContentEl.textContent = summary;
-        } catch (error) {
-            summaryContentEl.textContent = 'Error loading summary. Backend AI service unavailable.';
-        }
-    };
-
-
-    // --- INITIALIZATION ---
-    document.addEventListener('DOMContentLoaded', () => {
-        // Navigation setup
-        document.getElementById('nav-home').addEventListener('click', () => navigateTo('home-section'));
-        document.getElementById('nav-my-posts').addEventListener('click', () => navigateTo('my-posts-section'));
-        document.getElementById('nav-create-post').addEventListener('click', () => { resetPostForm(); navigateTo('post-crud-section'); });
-
-        document.getElementById('nav-register').addEventListener('click', () => { navigateTo('auth-section'); showRegister(); });
-        document.getElementById('nav-login').addEventListener('click', () => { navigateTo('auth-section'); showLogin(); });
-        document.getElementById('nav-logout').addEventListener('click', handleLogout);
-
-        // Start the application flow
-        updateNavButtons(false);
-        navigateTo('home-section');
-    });
 </script>
 </body>
 </html>
