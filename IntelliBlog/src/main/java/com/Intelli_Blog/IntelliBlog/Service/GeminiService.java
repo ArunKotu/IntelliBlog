@@ -1,63 +1,66 @@
 package com.Intelli_Blog.IntelliBlog.Service;
 
-import com.Intelli_Blog.IntelliBlog.Model.GenerateContentRequest;
-import com.Intelli_Blog.IntelliBlog.Model.GenerateContentResponse;
-
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientException;
 
-import java.util.Objects;
-import java.util.Optional;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class GeminiService {
-    
-    private final String apiUrl;
-    private final RestClient client;
-    
-    public GeminiService(
-        RestClient.Builder restClientBuilder,
-        @Value("${API_KEY}") String apiKey,
-        @Value("${gemini.base-url:https://generativelanguage.googleapis.com/v1beta/models/}") String baseUrl,
-        @Value("${gemini.model-name:gemini-2.5-flash-lite}") String modelName,
-        @Value("${gemini.endpoint:generateContent?key=}") String endpoint
-    ) {
-        this.apiUrl = baseUrl + modelName + endpoint + apiKey;
-        this.client = restClientBuilder.build();
-    }
 
-    private Optional<String> extractText(GenerateContentResponse response) {
-        return Optional.ofNullable(response)
-                .flatMap(r -> r.candidates().stream().findFirst())
-                .map(c -> c.content())
-                .flatMap(c -> c.parts().stream().findFirst())
-                .map(p -> p.text())
-                .filter(Objects::nonNull)
-                .map(String::trim);
+    @Value("${API_KEY}")
+    private String apiKey;
+
+    RestClient client = RestClient.create();
+    ObjectMapper mapper = new ObjectMapper();
+
+    private String extractText(String response) {
+        try {
+            JsonNode root = mapper.readTree(response);
+            return root.path("candidates")
+                    .get(0)
+                    .path("content")
+                    .path("parts")
+                    .get(0)
+                    .path("text")
+                    .asText()
+                    .trim();
+        } catch (Exception e) {
+            return "Summary generation failed.";
+        }
     }
 
     public String generateContent(String prompt) {
-        GenerateContentRequest requestBody = GenerateContentRequest.fromPrompt(prompt);
+
+        String url = "https://generativelanguage.googleapis.com/v1beta/models/"
+                + "gemini-2.5-flash-lite:generateContent?key=" + apiKey;
+
+        Map<String, Object> requestBody = Map.of(
+                "contents", List.of(
+                        Map.of("parts", List.of(
+                                Map.of("text", prompt)
+                        ))
+                )
+        );
 
         try {
-            GenerateContentResponse response = client.post()
-                    .uri(apiUrl)
+            String response = client.post()
+                    .uri(url)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(requestBody)
                     .retrieve()
-                    .body(GenerateContentResponse.class); 
+                    .body(String.class);
 
-            return extractText(response)
-                    .orElseThrow(() -> new RuntimeException("Gemini API response was empty or did not contain readable text."));
+            return extractText(response);
 
-        } catch (RestClientException e) {
-            System.err.println("API Call Failed: Could not connect or received an HTTP error from Gemini.");
-            System.err.println("Error details: " + e.getMessage());
-            
-            throw new RuntimeException("Gemini API call failed due to external or network error. Check application logs.", e);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "AI summary generation failed.";
         }
     }
 }
